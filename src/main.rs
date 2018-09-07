@@ -30,7 +30,6 @@ impl fmt::Display for Suit {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Card {
-    Ace(Suit),
     Regular(Suit, u8),
     Joker(u8),
     Special(Suit),
@@ -39,7 +38,7 @@ enum Card {
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Card::Ace(s) => write!(f, "{}A", s),
+            Card::Regular(s, 1) => write!(f, "{}A", s),
             Card::Regular(s, 13) => write!(f, "{}K", s),
             Card::Regular(s, 12) => write!(f, "{}Q", s),
             Card::Regular(s, 11) => write!(f, "{}J", s),
@@ -54,9 +53,7 @@ impl fmt::Display for Card {
 impl Card {
     fn new(suit: Suit, num: u8) -> Self {
         assert!(1 <= num && num < 14);
-        if num == 1 {
-            Card::Ace(suit)
-        } else if num == 12 && suit == Suit::Diamonds {
+        if num == 12 && suit == Suit::Diamonds {
             Card::Special(suit)
         } else if num == 11 && suit == Suit::Spades {
             Card::Special(suit)
@@ -150,7 +147,6 @@ impl Hand {
 
     fn can_accept(&self, card: Card) -> bool {
         let n = match card {
-            Card::Ace(_) => 1,
             Card::Regular(_, n) => n,
             Card::Joker(_) | Card::Special(_) => return true,
         };
@@ -170,8 +166,7 @@ impl Hand {
         let mut aces = 0;
         for c in self.cards.iter() {
             match c {
-                Card::Ace(_) => {sum += 1; aces += 1;},
-                Card::Regular(_, n) => sum += n,
+                Card::Regular(_, n) => {sum += n; if *n == 1 { aces += 1; }},
                 Card::Joker(_) => return HandSum::Win(WinCondition::Joker),
                 Card::Special(_) => return HandSum::Win(WinCondition::Special),
             }
@@ -255,7 +250,6 @@ impl Game {
             None => return None,
         };
         let is_red = match card {
-            Card::Ace(s) => s.is_red(),
             Card::Regular(s, _) => s.is_red(),
             Card::Joker(_) | Card::Special(_) => false,
         };
